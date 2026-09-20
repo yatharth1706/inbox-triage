@@ -23,8 +23,8 @@ export function SourceCard({
       onClick={onPick}
       className={[
         "flex cursor-pointer flex-col gap-[9px] rounded-2xl border p-[18px] text-left text-ink",
-        "transition-[transform,border-color,background-color] duration-200 ease-[cubic-bezier(.2,1.3,.4,1)]",
-        "hover:-translate-y-[3px]",
+        "transition-[transform,border-color,background-color] duration-300 ease-[var(--ease-out-soft)]",
+        "hover:-translate-y-[2px]",
         active
           ? "border-edge-active bg-surface-source-active"
           : "border-edge bg-surface-tile",

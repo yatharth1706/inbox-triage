@@ -27,7 +27,7 @@ export function RangeToggle({
             onClick={() => onChange(range)}
             className={[
               "cursor-pointer rounded-[9px] px-[15px] py-[9px] font-mono text-xs tracking-[0.04em]",
-              "transition-colors duration-[180ms]",
+              "transition-colors duration-[240ms] ease-[var(--ease-out-gentle)]",
               active
                 ? "bg-ink font-medium text-canvas"
                 : "bg-transparent text-muted-strong hover:text-ink-soft",

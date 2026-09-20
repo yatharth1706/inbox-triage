@@ -164,10 +164,13 @@ export function DoneStep({
       </div>
 
       <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-3">
-        {visible.map((email) => (
+        {visible.map((email, index) => (
           <EmailCard
             key={email.id}
             email={email}
+            index={index}
+            // A restored run is not a fresh result; it should just be there.
+            animate={savedAt === null}
             open={openId === email.id}
             showConfidence={showConfidence}
             body={email.body ?? bodies[email.id]}

@@ -24,7 +24,7 @@ export function FolderNav({
             onClick={() => onSelect(folder.id)}
             className={[
               "inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-2",
-              "text-[12.5px] font-medium transition-all duration-[180ms]",
+              "text-[12.5px] font-medium transition-[color,background-color,border-color] duration-[240ms] ease-[var(--ease-out-gentle)]",
               active
                 ? "border-edge-6 bg-surface-nav-active text-ink"
                 : "border-edge bg-transparent text-muted hover:text-ink-soft",

@@ -104,7 +104,7 @@ export function ConnectStep({
           type="button"
           onClick={onStart}
           disabled={blocked}
-          className="cursor-pointer rounded-xl bg-accent px-[22px] py-[13px] text-[14px] font-semibold tracking-[-0.01em] text-on-accent transition-transform duration-[180ms] ease-[cubic-bezier(.2,1.3,.4,1)] hover:-translate-y-[2px] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+          className="cursor-pointer rounded-xl bg-accent px-[22px] py-[13px] text-[14px] font-semibold tracking-[-0.01em] text-on-accent transition-transform duration-300 ease-[var(--ease-out-soft)] hover:-translate-y-[2px] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
         >
           {label}
         </button>

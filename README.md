@@ -182,6 +182,31 @@ Notes on the implementation:
 - `src/lib/server/*` is marked `server-only`, so importing any of it from a
   client component is a build error rather than a leaked secret.
 
+### Motion
+
+Every easing curve is a token on `:root` (`--ease-out-soft`, `--ease-out-gentle`,
+`--ease-in-out-soft`) and none of them overshoot. The source design used springy
+curves like `cubic-bezier(.2, 1.4, .4, 1)`, whose y > 1 makes each transition
+spring past its target and snap back — snappy rather than smooth.
+
+Three things that matter more than the curves:
+
+- The **progress ring interpolates**. Messages arrive in batches, so the raw
+  percentage jumps; `useSmoothNumber` eases the displayed value with `rAF` and
+  the ring is drawn from that. Without it the ring visibly ratchets.
+- The **card entrance is staggered** by 28ms, capped at 14 cards, instead of
+  three dozen cards animating in perfect unison.
+- A **restored run does not animate in**. Those results are not new, so they are
+  simply there.
+
+Expanding a card animates `grid-template-rows` from `0fr` to `1fr`, which eases
+to the panel's natural height without a hard-coded one. The panel stays mounted
+so a fetched body survives collapsing, with `inert` keeping it out of the tab
+order while closed.
+
+Measured at 4x CPU throttle: 16.7ms p50 and p95 through classification, card
+entrance and folder filtering.
+
 ### Styling
 
 Layout, spacing and typography are Tailwind utilities over the tokens in

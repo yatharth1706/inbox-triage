@@ -13,7 +13,7 @@ export function FolderTiles({ counts }: { counts: CategoryCounts }) {
             key={category.id}
             className={[
               "flex flex-col gap-[9px] rounded-[13px] border px-[13px] py-3",
-              "transition-[border-color,background-color] duration-[350ms] ease-out",
+              "transition-[border-color,background-color] duration-[450ms] ease-[var(--ease-out-soft)]",
               filled
                 ? "border-edge-5 bg-surface-tile-active"
                 : "border-edge bg-surface-tile",
@@ -27,7 +27,7 @@ export function FolderTiles({ counts }: { counts: CategoryCounts }) {
             </div>
             <div
               className={[
-                "font-mono text-[21px] font-medium tracking-[-0.02em]",
+                "font-mono text-[21px] font-medium tabular-nums tracking-[-0.02em] transition-colors duration-[450ms]",
                 filled ? "text-ink" : "text-faint",
               ].join(" ")}
             >

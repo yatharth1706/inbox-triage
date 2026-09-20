@@ -46,13 +46,19 @@
   --color-surface-nav-active: #181c21;
   --color-surface-pushed: #15211c;
 
+  /* Easing. None of these overshoot: the springy curves in the source design
+     were what made the motion read as snappy rather than smooth. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-gentle: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
   /* Motion */
-  --animate-rise: jev-rise 0.4s ease both;
-  --animate-rise-fast: jev-rise 0.25s ease both;
-  --animate-pop: jev-pop 0.38s cubic-bezier(0.2, 1.4, 0.4, 1) both;
-  --animate-toss: jev-toss 0.34s cubic-bezier(0.2, 1.5, 0.4, 1) both;
-  --animate-toss-fast: jev-toss 0.3s cubic-bezier(0.2, 1.5, 0.4, 1) both;
-  --animate-glow: jev-pulse 2.4s ease-in-out infinite;
+  --animate-rise: jev-rise 0.52s var(--ease-out-soft) both;
+  --animate-rise-fast: jev-rise 0.32s var(--ease-out-soft) both;
+  --animate-pop: jev-pop 0.46s var(--ease-out-soft) both;
+  --animate-toss: jev-toss 0.42s var(--ease-out-soft) both;
+  --animate-toss-fast: jev-toss 0.38s var(--ease-out-soft) both;
+  --animate-glow: jev-pulse 3.2s var(--ease-in-out-soft) infinite;
   --animate-sweep: jev-sweep 1.7s linear infinite;
   --animate-blink: jev-blink 2.2s ease-in-out infinite;
   --animate-bob: jev-bob 3.4s ease-in-out infinite;
@@ -60,11 +66,11 @@
 }
 
 @keyframes jev-pulse {
-  0%, 100% { opacity: 0.2; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.08); }
+  0%, 100% { opacity: 0.22; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.06); }
 }
 @keyframes jev-rise {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
   to { opacity: 1; transform: none; }
 }
 @keyframes jev-sweep {
@@ -76,14 +82,12 @@
   50% { opacity: 0.15; }
 }
 @keyframes jev-pop {
-  0% { opacity: 0; transform: translateY(18px) scale(0.94) rotate(-1.5deg); }
-  55% { opacity: 1; transform: translateY(-4px) scale(1.02) rotate(0.6deg); }
-  100% { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.985); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes jev-toss {
-  0% { opacity: 0; transform: translate(-16px, 10px) rotate(-4deg) scale(0.96); }
-  60% { opacity: 1; transform: translate(2px, -3px) rotate(1deg) scale(1.01); }
-  100% { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translate3d(-10px, 4px, 0); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes jev-bob {
   0%, 100% { transform: translateY(0); }

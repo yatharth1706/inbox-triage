@@ -13,6 +13,8 @@ export function EmailCard({
   showConfidence,
   body,
   bodyLoading,
+  index,
+  animate,
   onToggle,
   onMove,
 }: {
@@ -22,6 +24,10 @@ export function EmailCard({
   /** Canned for demo mail, fetched on expand for live mail. */
   body?: string;
   bodyLoading: boolean;
+  /** Position in the grid, used to stagger the entrance. */
+  index: number;
+  /** False for a restored run — those results are not new, so they should not fly in. */
+  animate: boolean;
   onToggle: () => void;
   onMove: (category: CategoryId) => void;
 }) {
@@ -32,10 +38,13 @@ export function EmailCard({
   return (
     <article
       className={[
-        "animate-pop overflow-hidden rounded-[15px] border",
-        "transition-[border-color,background-color] duration-200",
+        "overflow-hidden rounded-[15px] border",
+        "transition-[border-color,background-color] duration-300 ease-[var(--ease-out-gentle)]",
+        animate ? "animate-pop" : "",
         open ? "border-edge-6 bg-surface-card-open" : "border-edge bg-surface-tile",
       ].join(" ")}
+      // Capped so a long list finishes arriving quickly instead of trickling in.
+      style={animate ? { animationDelay: `${Math.min(index, 14) * 28}ms` } : undefined}
     >
       <button
         type="button"
@@ -73,52 +82,62 @@ export function EmailCard({
           <CategoryPill label={category.label} color={category.color} />
           <span className="h-[3px] flex-1 overflow-hidden rounded-sm bg-edge">
             <span
-              className="block h-full rounded-sm"
+              className="block h-full rounded-sm transition-[width] duration-500 ease-[var(--ease-out-soft)]"
               style={confidenceBarStyle(category.color, email.confidence)}
             />
           </span>
           {showConfidence ? (
-            <span className="font-mono text-[10.5px] text-dim">
+            <span className="font-mono text-[10.5px] tabular-nums text-dim">
               {formatConfidence(email.confidence)}
             </span>
           ) : null}
         </span>
       </button>
 
-      {open ? (
-        <div
-          id={panelId}
-          className="flex animate-rise-fast flex-col gap-3 border-t border-edge px-4 pb-4 pt-[14px]"
-        >
-          {bodyLoading ? (
-            <p className="font-mono text-[11px] text-dim">Loading message…</p>
-          ) : body ? (
-            <p className="whitespace-pre-line text-pretty text-[13px] leading-[1.65] text-ink-body">
-              {body}
+      {/*
+        Animating grid-template-rows from 0fr to 1fr eases the panel open at its
+        natural height, which a height transition cannot do without a magic
+        number. The panel stays mounted so the fetched body survives collapsing;
+        `inert` keeps it out of the tab order while closed.
+      */}
+      <div
+        id={panelId}
+        inert={!open}
+        className="grid transition-[grid-template-rows] duration-[360ms] ease-[var(--ease-out-soft)]"
+        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+      >
+        <div className="overflow-hidden">
+          <div className="flex flex-col gap-3 border-t border-edge px-4 pb-4 pt-[14px]">
+            {bodyLoading ? (
+              <p className="font-mono text-[11px] text-dim">Loading message…</p>
+            ) : body ? (
+              <p className="whitespace-pre-line text-pretty text-[13px] leading-[1.65] text-ink-body">
+                {body}
+              </p>
+            ) : null}
+            <p className="border-l-2 border-edge-4 pl-[10px] font-mono text-[10.5px] leading-[1.6] text-dim">
+              jev · {email.reason}
             </p>
-          ) : null}
-          <p className="border-l-2 border-edge-4 pl-[10px] font-mono text-[10.5px] leading-[1.6] text-dim">
-            jev · {email.reason}
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-dim">
-              Move to
-            </span>
-            <select
-              aria-label={`Move “${email.subject}” to another folder`}
-              value={email.category}
-              onChange={(event) => onMove(event.target.value as CategoryId)}
-              className="cursor-pointer appearance-none rounded-[9px] border border-edge-4 bg-surface-select px-[11px] py-[7px] font-mono text-[11px] text-ink-soft"
-            >
-              {CATEGORIES.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-dim">
+                Move to
+              </span>
+              <select
+                aria-label={`Move “${email.subject}” to another folder`}
+                value={email.category}
+                onChange={(event) => onMove(event.target.value as CategoryId)}
+                className="cursor-pointer appearance-none rounded-[9px] border border-edge-4 bg-surface-select px-[11px] py-[7px] font-mono text-[11px] text-ink-soft transition-colors duration-200 hover:border-edge-6"
+              >
+                {CATEGORIES.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
-      ) : null}
+      </div>
     </article>
   );
 }

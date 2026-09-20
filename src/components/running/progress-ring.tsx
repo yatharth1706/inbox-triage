@@ -1,3 +1,7 @@
+"use client";
+
+import { useSmoothNumber } from "@/hooks/use-smooth-number";
+
 /** Matches the r=52 circle in the source design: 2πr ≈ 327. */
 const CIRCUMFERENCE = 327;
 
@@ -10,6 +14,9 @@ export function ProgressRing({
   processed: number;
   total: number;
 }) {
+  // The ring advances in batches; interpolating makes it sweep rather than jump.
+  const shown = useSmoothNumber(percent);
+
   return (
     <div
       role="progressbar"
@@ -41,14 +48,14 @@ export function ProgressRing({
           stroke="var(--accent)"
           strokeWidth="6"
           strokeLinecap="round"
-          strokeDasharray={`${(percent / 100) * CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+          strokeDasharray={`${(shown / 100) * CIRCUMFERENCE} ${CIRCUMFERENCE}`}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-[3px]">
-        <div className="font-mono text-[34px] font-medium tracking-[-0.02em]">
-          {percent}%
+        <div className="font-mono text-[34px] font-medium tracking-[-0.02em] tabular-nums">
+          {Math.round(shown)}%
         </div>
-        <div className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-strong">
+        <div className="font-mono text-[10.5px] uppercase tracking-[0.14em] tabular-nums text-muted-strong">
           {processed} / {total}
         </div>
       </div>
