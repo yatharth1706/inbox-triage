@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+/* Runtime-swappable accent (see src/lib/config.ts). */
+:root {
+  --accent: #7ce3bc;
+}
+
+@theme inline {
+  --color-accent: var(--accent);
+  --font-sans: var(--font-space-grotesk), Helvetica, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+}
+
+@theme {
+  /* Canvas and type ramp */
+  --color-canvas: #0b0c0e;
+  --color-ink: #e8e9ec;
+  --color-ink-soft: #c7cad0;
+  --color-ink-body: #b7bcc3;
+  --color-muted: #9ba1a9;
+  --color-muted-strong: #8a8f98;
+  --color-muted-soft: #7e848d;
+  --color-dim: #6e747d;
+  --color-dim-soft: #565c65;
+  --color-faint: #3e444c;
+  --color-on-accent: #08110d;
+
+  /* Edges, lightest to strongest */
+  --color-edge: #1b1e23;
+  --color-edge-2: #1f2329;
+  --color-edge-3: #23272e;
+  --color-edge-4: #262b32;
+  --color-edge-5: #2a3038;
+  --color-edge-6: #333a43;
+  --color-edge-hover: #39404a;
+  --color-edge-idle: #2a2f36;
+  --color-edge-active: #3a4a44;
+
+  /* Surfaces, named by where they are used */
+  --color-surface-tile: #0f1114;
+  --color-surface-panel: #121419;
+  --color-surface-tile-active: #12151a;
+  --color-surface-card-open: #121519;
+  --color-surface-source-active: #14171b;
+  --color-surface-select: #15181c;
+  --color-surface-nav-active: #181c21;
+  --color-surface-pushed: #15211c;
+
+  /* Motion */
+  --animate-rise: jev-rise 0.4s ease both;
+  --animate-rise-fast: jev-rise 0.25s ease both;
+  --animate-pop: jev-pop 0.38s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  --animate-toss: jev-toss 0.34s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+  --animate-toss-fast: jev-toss 0.3s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+  --animate-glow: jev-pulse 2.4s ease-in-out infinite;
+  --animate-sweep: jev-sweep 1.7s linear infinite;
+  --animate-blink: jev-blink 2.2s ease-in-out infinite;
+  --animate-bob: jev-bob 3.4s ease-in-out infinite;
+  --animate-orbit: jev-orbit 5.5s linear infinite;
+}
+
+@keyframes jev-pulse {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.08); }
+}
+@keyframes jev-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes jev-sweep {
+  from { transform: translateX(-120%); }
+  to { transform: translateX(320%); }
+}
+@keyframes jev-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.15; }
+}
+@keyframes jev-pop {
+  0% { opacity: 0; transform: translateY(18px) scale(0.94) rotate(-1.5deg); }
+  55% { opacity: 1; transform: translateY(-4px) scale(1.02) rotate(0.6deg); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes jev-toss {
+  0% { opacity: 0; transform: translate(-16px, 10px) rotate(-4deg) scale(0.96); }
+  60% { opacity: 1; transform: translate(2px, -3px) rotate(1deg) scale(1.01); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes jev-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes jev-orbit {
+  to { transform: rotate(360deg); }
+}
+
+html,
+body {
+  background: var(--color-canvas);
+}
+
+body {
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  color: #a7efd4;
+}
+::selection {
+  background: #1f3a31;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
