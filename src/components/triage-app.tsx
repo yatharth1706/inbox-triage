@@ -20,7 +20,7 @@ const AUTH_ERRORS: Record<string, string> = {
 export function TriageApp({ maxMessages }: { maxMessages: number }) {
   const { accent, speed, showConfidence, model } = useTriageConfig();
   const { session, disconnect } = useSession();
-  const run = useTriageRun(speed);
+  const run = useTriageRun(speed, session.email);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authDismissed, setAuthDismissed] = useState(false);
@@ -51,7 +51,7 @@ export function TriageApp({ maxMessages }: { maxMessages: number }) {
     <main className="flex min-h-screen flex-col items-center px-5 pb-[72px] pt-[26px] font-sans text-ink">
       <SiteHeader model={model} connected={session.connected} />
 
-      {state.step === "connect" ? (
+      {!state.hydrated ? null : state.step === "connect" ? (
         <ConnectStep
           source={state.source}
           range={state.range}
@@ -97,6 +97,11 @@ export function TriageApp({ maxMessages }: { maxMessages: number }) {
           onToggleOpen={actions.toggleOpen}
           onMove={actions.move}
           onReset={actions.reset}
+          onForget={actions.forget}
+          account={state.account}
+          savedAt={state.savedAt}
+          persisted={state.persisted}
+          connectedEmail={session.email}
         />
       ) : null}
     </main>

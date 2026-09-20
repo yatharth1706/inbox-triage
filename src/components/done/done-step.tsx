@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { ALL_MAIL_COLOR, CATEGORIES } from "@/lib/categories";
 import { averageConfidence } from "@/lib/emails";
+import { savedAgo } from "@/lib/run-storage";
 import type {
   CategoryCounts,
   CategoryId,
@@ -32,6 +33,11 @@ export function DoneStep({
   onToggleOpen,
   onMove,
   onReset,
+  onForget,
+  account,
+  savedAt,
+  persisted,
+  connectedEmail,
 }: {
   classified: readonly Email[];
   counts: CategoryCounts;
@@ -50,6 +56,13 @@ export function DoneStep({
   onToggleOpen: (id: string) => void;
   onMove: (id: string, category: CategoryId) => void;
   onReset: () => void;
+  onForget: () => void;
+  /** "demo" or the address these results came from. */
+  account: string | null;
+  /** Set when these results were restored from a previous visit. */
+  savedAt: number | null;
+  persisted: boolean;
+  connectedEmail: string | null;
 }) {
   const folders = useMemo<Folder[]>(
     () => [
@@ -75,33 +88,57 @@ export function DoneStep({
     [counts],
   );
 
+  const isDemo = account === "demo";
+  const sourceLabel = isDemo ? "Demo inbox" : (account ?? "your inbox");
+  const staleAccount =
+    !isDemo && account !== null && connectedEmail !== null && account !== connectedEmail;
+
   const notices = [
     error,
     capped ? `Stopped at the ${total}-message cap for this run.` : null,
     failures > 0 ? `${failures} message${failures === 1 ? "" : "s"} could not be read.` : null,
+    staleAccount
+      ? `Gmail is now connected as ${connectedEmail}. Start a new run to classify that mailbox.`
+      : null,
+    !persisted
+      ? "This run could not be saved on this device — it will be gone on reload."
+      : null,
   ].filter(Boolean) as string[];
 
   return (
     <section className="w-full max-w-[1080px] animate-rise pt-[42px]">
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div className="min-w-[280px]">
-          <Eyebrow tone="accent">Run complete</Eyebrow>
+          <Eyebrow tone="accent">{savedAt === null ? "Run complete" : "Saved run"}</Eyebrow>
           <h2 className="mt-[11px] text-pretty text-[clamp(24px,3.4vw,32px)] font-semibold tracking-[-0.025em]">
             {classified.length} messages sorted into {CATEGORIES.length} folders
           </h2>
-          <p className="mt-[7px] max-w-[56ch] text-pretty text-[13.5px] text-muted-strong">
+          <p className="mt-[7px] flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-dim">
+            <span className="text-muted-strong">{sourceLabel}</span>
+            {savedAt !== null ? <span>· saved {savedAgo(savedAt)}</span> : null}
+          </p>
+          <p className="mt-[9px] max-w-[56ch] text-pretty text-[13.5px] text-muted-strong">
             Largest folder: {largest.label} ({largest.count}). Open any card to read it, or
             move it here — your mailbox is untouched.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onReset}
-          className="cursor-pointer rounded-[11px] border border-edge-3 bg-transparent px-4 py-[11px] text-[13.5px] font-medium text-ink-soft transition-colors hover:border-edge-hover hover:text-ink"
-        >
-          New run
-        </button>
+        <div className="flex flex-wrap gap-[10px]">
+          <button
+            type="button"
+            onClick={onForget}
+            className="cursor-pointer rounded-[11px] border border-edge-3 bg-transparent px-4 py-[11px] text-[13.5px] font-medium text-dim transition-colors hover:border-edge-hover hover:text-ink-soft"
+          >
+            Clear saved run
+          </button>
+          <button
+            type="button"
+            onClick={onReset}
+            className="cursor-pointer rounded-[11px] border border-edge-3 bg-transparent px-4 py-[11px] text-[13.5px] font-medium text-ink-soft transition-colors hover:border-edge-hover hover:text-ink"
+          >
+            New run
+          </button>
+        </div>
       </div>
 
       {notices.length > 0 ? (

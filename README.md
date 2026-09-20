@@ -17,7 +17,8 @@ UI ported from the Claude Design source `JEV Inbox Triage.dc.html` (dark variant
 - **Tailwind CSS v4** — design tokens live in `src/app/globals.css` under `@theme`
 - **TypeSafe JEV** for classification, over its HTTP API
 - Gmail REST API v1, read-only
-- No database: the session lives in an encrypted cookie
+- No database: the session lives in an encrypted cookie, the last run in
+  `localStorage`
 
 ## Setup
 
@@ -139,8 +140,39 @@ timer sized so any window finishes in ~48 ticks; live appends messages as the
 stream delivers them. Folder counts are **derived** with `useMemo` from the
 classified list rather than stored, so a move can never desync them.
 
+### Saved runs
+
+The last completed run is kept in `localStorage`, so returning to the app shows
+your results rather than an empty connect screen. The header reads **Saved run**
+with the mailbox it came from and how long ago it was saved, and there is a
+**Clear saved run** button beside **New run**.
+
+Notes on the implementation:
+
+- **Tokens are never stored there.** See below — this is the whole reason the
+  split exists.
+- Reclassifications are saved too, so a message you moved stays moved.
+- Restoring does not re-save, so the "saved 2h ago" timestamp stays truthful.
+- The stored blob is validated on read and discarded if it does not match the
+  schema; `localStorage` is user-writable, so nothing read back is trusted.
+- Bodies are not persisted. They are small, lazily fetched, and would bloat the
+  blob for no benefit — a restored card refetches on expand.
+- Roughly 10 KB per 40 messages. If the write fails (quota, private mode) the
+  run still works in memory and the UI says it could not be saved.
+- Connecting a different mailbox does not silently swap the results. The saved
+  run stays, labelled with whose it is, and a notice points out that Gmail is
+  now connected as someone else.
+
 ### Security notes
 
+- **Tokens live in the httpOnly cookie, never in `localStorage`.** This is the
+  load-bearing decision. Scripts cannot read an httpOnly cookie; they can read
+  `localStorage` freely, so putting a refresh token there would turn any XSS
+  into standing access to the mailbox. Only non-secret display data — the
+  address and the classification results — goes to `localStorage`.
+- Those results still contain subjects, senders and snippets in plaintext on
+  the user's disk. That is ordinary for a mail client, but it is why **Clear
+  saved run** exists, and why a shared machine is worth thinking about.
 - The session cookie is `httpOnly`, `sameSite=lax`, AES-256-GCM sealed, and
   `secure` in production. OAuth uses a single-use `state` cookie for CSRF.
 - **The refresh token lives in that cookie**, which is fine for a single-user
@@ -202,6 +234,8 @@ configuration and real-world header shapes on first contact.
   for that reason.
 - No incremental sync. Each run re-reads the whole window rather than using
   Gmail's `historyId`.
-- No persistence: results live in memory and are gone on reload.
+- One saved run, not a history. A new run replaces the previous one.
+- Saved runs are per-browser. Nothing syncs across devices, because there is
+  still no server-side storage.
 - Classification quality is unmeasured. There is no labelled set and no eval, so
   the category descriptions are reasoned-about, not tuned.

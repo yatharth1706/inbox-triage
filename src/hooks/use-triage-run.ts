@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { categoryById } from "@/lib/categories";
 import { buildEmails, messageCountFor, runTimestamp } from "@/lib/emails";
 import { readRunEvents } from "@/lib/run-events";
+import { clearRun, loadRun, saveRun, type StoredRun } from "@/lib/run-storage";
 import type {
   CategoryCounts,
   CategoryId,
@@ -38,14 +39,24 @@ interface RunState {
   failures: number;
   bodies: Record<string, string>;
   loadingBody: string | null;
+  /** "demo" or the Gmail address these results came from. */
+  account: string | null;
+  /** Set only when the results were restored from a previous visit. */
+  savedAt: number | null;
+  /** False once localStorage refuses to hold the run (quota, private mode). */
+  persisted: boolean;
+  /** Blocks the first paint until the restore check has run. */
+  hydrated: boolean;
+  /** True when the in-memory run differs from what is on disk. */
+  dirty: boolean;
 }
 
 type Action =
   | { type: "selectSource"; source: SourceKey }
   | { type: "selectRange"; range: RangeDays }
-  | { type: "startDemo" }
+  | { type: "startDemo"; account: string }
   | { type: "tick"; batch: number }
-  | { type: "startLive" }
+  | { type: "startLive"; account: string }
   | { type: "liveMeta"; total: number; capped: boolean }
   | { type: "liveMessage"; email: Email }
   | { type: "finish"; failures?: number }
@@ -55,6 +66,9 @@ type Action =
   | { type: "move"; id: string; category: CategoryId }
   | { type: "bodyLoading"; id: string }
   | { type: "bodyLoaded"; id: string; body: string }
+  | { type: "restore"; run: StoredRun }
+  | { type: "hydrated" }
+  | { type: "persistFailed" }
   | { type: "reset" };
 
 const INITIAL: RunState = {
@@ -73,6 +87,11 @@ const INITIAL: RunState = {
   failures: 0,
   bodies: {},
   loadingBody: null,
+  account: null,
+  savedAt: null,
+  persisted: true,
+  hydrated: false,
+  dirty: false,
 };
 
 function logLine(email: Email, index: number): LogLine {
@@ -91,6 +110,9 @@ const clearedRun = {
   error: null,
   capped: false,
   failures: 0,
+  savedAt: null,
+  persisted: true,
+  dirty: false,
 };
 
 function reducer(state: RunState, action: Action): RunState {
@@ -103,12 +125,21 @@ function reducer(state: RunState, action: Action): RunState {
 
     case "startDemo": {
       const queue = buildEmails(state.range);
-      return { ...state, ...clearedRun, step: "running", mode: "demo", queue, total: queue.length };
+      return {
+        ...state,
+        ...clearedRun,
+        step: "running",
+        mode: "demo",
+        queue,
+        total: queue.length,
+        account: action.account,
+      };
     }
 
     case "tick": {
       if (state.queue.length === 0) {
-        return state.step === "done" ? state : { ...state, step: "done" };
+        // Demo runs end here rather than via "finish", so mark them for saving too.
+        return state.step === "done" ? state : { ...state, step: "done", dirty: true };
       }
       const revealed = state.queue.slice(0, action.batch);
       const lines = revealed.map((email, i) => logLine(email, state.classified.length + i));
@@ -121,7 +152,14 @@ function reducer(state: RunState, action: Action): RunState {
     }
 
     case "startLive":
-      return { ...state, ...clearedRun, step: "running", mode: "live", total: 0 };
+      return {
+        ...state,
+        ...clearedRun,
+        step: "running",
+        mode: "live",
+        total: 0,
+        account: action.account,
+      };
 
     case "liveMeta":
       return { ...state, total: action.total, capped: action.capped };
@@ -134,7 +172,7 @@ function reducer(state: RunState, action: Action): RunState {
       };
 
     case "finish":
-      return { ...state, step: "done", failures: action.failures ?? 0 };
+      return { ...state, step: "done", failures: action.failures ?? 0, dirty: true };
 
     case "fail":
       // Keep whatever was classified before the failure rather than discarding it.
@@ -154,6 +192,7 @@ function reducer(state: RunState, action: Action): RunState {
         classified: state.classified.map((email) =>
           email.id === action.id ? { ...email, category: action.category } : email,
         ),
+        dirty: true,
       };
 
     case "bodyLoading":
@@ -166,21 +205,57 @@ function reducer(state: RunState, action: Action): RunState {
         loadingBody: state.loadingBody === action.id ? null : state.loadingBody,
       };
 
+    case "restore":
+      return {
+        ...state,
+        step: "done",
+        mode: action.run.account === "demo" ? "demo" : "live",
+        classified: action.run.emails,
+        total: action.run.total,
+        capped: action.run.capped,
+        failures: action.run.failures,
+        account: action.run.account,
+        savedAt: action.run.savedAt,
+        hydrated: true,
+        dirty: false,
+      };
+
+    case "hydrated":
+      return { ...state, hydrated: true };
+
+    case "persistFailed":
+      return { ...state, persisted: false };
+
     case "reset":
-      return { ...INITIAL, source: state.source, range: state.range, bodies: state.bodies };
+      return {
+        ...INITIAL,
+        source: state.source,
+        range: state.range,
+        bodies: state.bodies,
+        hydrated: true,
+      };
   }
 }
 
-export function useTriageRun(speed: number) {
+export function useTriageRun(speed: number, gmailAccount: string | null) {
   const [state, dispatch] = useReducer(reducer, INITIAL);
   const stateRef = useRef(state);
   const abortRef = useRef<AbortController | null>(null);
+  const accountRef = useRef(gmailAccount);
 
   // Synced after render, never during it. Event handlers fire after effects
   // have flushed, so callbacks always read the committed state.
   useEffect(() => {
     stateRef.current = state;
+    accountRef.current = gmailAccount;
   });
+
+  // Restore a previous visit's run. localStorage is unavailable during SSR, so
+  // this deliberately waits for mount rather than using a lazy initialiser.
+  useEffect(() => {
+    const saved = loadRun();
+    dispatch(saved ? { type: "restore", run: saved } : { type: "hydrated" });
+  }, []);
 
   // Demo pacing. Live runs advance on stream events instead.
   useEffect(() => {
@@ -192,11 +267,11 @@ export function useTriageRun(speed: number) {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  const startLive = useCallback(async (range: RangeDays) => {
+  const startLive = useCallback(async (range: RangeDays, account: string) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    dispatch({ type: "startLive" });
+    dispatch({ type: "startLive", account });
 
     try {
       const response = await fetch("/api/triage/run", {
@@ -263,8 +338,8 @@ export function useTriageRun(speed: number) {
       selectRange: (range: RangeDays) => dispatch({ type: "selectRange", range }),
       start: () => {
         const { source, range } = stateRef.current;
-        if (source === "demo") dispatch({ type: "startDemo" });
-        else void startLive(range);
+        if (source === "demo") dispatch({ type: "startDemo", account: "demo" });
+        else void startLive(range, accountRef.current ?? "gmail");
       },
       selectFolder: (folder: FolderFilter) => dispatch({ type: "selectFolder", folder }),
       toggleOpen: (id: string) => {
@@ -277,9 +352,37 @@ export function useTriageRun(speed: number) {
         abortRef.current?.abort();
         dispatch({ type: "reset" });
       },
+      /** Forgets the saved run on this device as well as the in-memory one. */
+      forget: () => {
+        abortRef.current?.abort();
+        clearRun();
+        dispatch({ type: "reset" });
+      },
     }),
     [startLive, loadBody],
   );
+
+  // Persist finished runs, including any reclassification the user makes.
+  useEffect(() => {
+    if (!state.dirty || state.step !== "done") return;
+    if (state.classified.length === 0 || !state.account) return;
+    const ok = saveRun({
+      account: state.account,
+      total: state.total,
+      capped: state.capped,
+      failures: state.failures,
+      emails: state.classified,
+    });
+    if (!ok) dispatch({ type: "persistFailed" });
+  }, [
+    state.dirty,
+    state.step,
+    state.classified,
+    state.account,
+    state.total,
+    state.capped,
+    state.failures,
+  ]);
 
   // Derived, never stored: a move can never desync the folder counts.
   const counts = useMemo<CategoryCounts>(() => {
