@@ -14,10 +14,17 @@ export function TriageConfigProvider({
   children,
   ...overrides
 }: Partial<TriageConfig> & { children: ReactNode }) {
+  const { accent, speed, showConfidence, model } = overrides;
+  // Explicit fallbacks: spreading the overrides would let an undefined prop
+  // overwrite a default with undefined.
   const config = useMemo<TriageConfig>(
-    () => ({ ...DEFAULT_CONFIG, ...overrides }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [overrides.accent, overrides.speed, overrides.showConfidence],
+    () => ({
+      accent: accent ?? DEFAULT_CONFIG.accent,
+      speed: speed ?? DEFAULT_CONFIG.speed,
+      showConfidence: showConfidence ?? DEFAULT_CONFIG.showConfidence,
+      model: model ?? DEFAULT_CONFIG.model,
+    }),
+    [accent, speed, showConfidence, model],
   );
 
   return (

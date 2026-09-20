@@ -15,39 +15,45 @@ import { EmailCard } from "./email-card";
 import { FolderNav } from "./folder-nav";
 
 export function DoneStep({
-  emails,
+  classified,
   counts,
   pool,
   visible,
   selected,
   openId,
-  pushed,
   total,
   showConfidence,
+  bodies,
+  loadingBody,
+  capped,
+  failures,
+  error,
   onSelectFolder,
   onToggleOpen,
   onMove,
-  onPush,
   onReset,
 }: {
-  emails: readonly Email[];
+  classified: readonly Email[];
   counts: CategoryCounts;
   pool: readonly Email[];
   visible: readonly Email[];
   selected: FolderFilter;
-  openId: number | null;
-  pushed: boolean;
+  openId: string | null;
   total: number;
   showConfidence: boolean;
+  bodies: Record<string, string>;
+  loadingBody: string | null;
+  capped: boolean;
+  failures: number;
+  error: string | null;
   onSelectFolder: (folder: FolderFilter) => void;
-  onToggleOpen: (id: number) => void;
-  onMove: (id: number, category: CategoryId) => void;
-  onPush: () => void;
+  onToggleOpen: (id: string) => void;
+  onMove: (id: string, category: CategoryId) => void;
   onReset: () => void;
 }) {
   const folders = useMemo<Folder[]>(
     () => [
-      { id: "all", label: "All mail", color: ALL_MAIL_COLOR, count: emails.length },
+      { id: "all", label: "All mail", color: ALL_MAIL_COLOR, count: classified.length },
       ...CATEGORIES.map((category) => ({
         id: category.id,
         label: category.label,
@@ -55,7 +61,7 @@ export function DoneStep({
         count: counts[category.id] ?? 0,
       })),
     ],
-    [emails.length, counts],
+    [classified.length, counts],
   );
 
   const current = folders.find((folder) => folder.id === selected) ?? folders[0];
@@ -69,41 +75,47 @@ export function DoneStep({
     [counts],
   );
 
+  const notices = [
+    error,
+    capped ? `Stopped at the ${total}-message cap for this run.` : null,
+    failures > 0 ? `${failures} message${failures === 1 ? "" : "s"} could not be read.` : null,
+  ].filter(Boolean) as string[];
+
   return (
     <section className="w-full max-w-[1080px] animate-rise pt-[42px]">
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div className="min-w-[280px]">
           <Eyebrow tone="accent">Run complete</Eyebrow>
           <h2 className="mt-[11px] text-pretty text-[clamp(24px,3.4vw,32px)] font-semibold tracking-[-0.025em]">
-            {total} messages sorted into {CATEGORIES.length} folders
+            {classified.length} messages sorted into {CATEGORIES.length} folders
           </h2>
           <p className="mt-[7px] max-w-[56ch] text-pretty text-[13.5px] text-muted-strong">
             Largest folder: {largest.label} ({largest.count}). Open any card to read it, or
-            move it — JEV re-weights the run.
+            move it here — your mailbox is untouched.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-[10px]">
-          <button
-            type="button"
-            onClick={onReset}
-            className="cursor-pointer rounded-[11px] border border-edge-3 bg-transparent px-4 py-[11px] text-[13.5px] font-medium text-ink-soft transition-colors hover:border-edge-hover hover:text-ink"
-          >
-            New run
-          </button>
-          <button
-            type="button"
-            onClick={onPush}
-            className={[
-              "cursor-pointer rounded-[11px] px-4 py-[11px] text-[13.5px] font-semibold",
-              "transition-transform duration-[180ms] ease-[cubic-bezier(.2,1.3,.4,1)] hover:-translate-y-[2px]",
-              pushed ? "bg-surface-pushed text-accent" : "bg-accent text-on-accent",
-            ].join(" ")}
-          >
-            {pushed ? "Labels written to Gmail ✓" : "Apply labels in Gmail"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onReset}
+          className="cursor-pointer rounded-[11px] border border-edge-3 bg-transparent px-4 py-[11px] text-[13.5px] font-medium text-ink-soft transition-colors hover:border-edge-hover hover:text-ink"
+        >
+          New run
+        </button>
       </div>
+
+      {notices.length > 0 ? (
+        <div className="mt-4 flex flex-col gap-2">
+          {notices.map((notice) => (
+            <p
+              key={notice}
+              className="rounded-[11px] border border-edge-3 bg-surface-tile px-3 py-2 font-mono text-[11px] text-dim"
+            >
+              {notice}
+            </p>
+          ))}
+        </div>
+      ) : null}
 
       <FolderNav folders={folders} selected={selected} onSelect={onSelectFolder} />
 
@@ -121,6 +133,8 @@ export function DoneStep({
             email={email}
             open={openId === email.id}
             showConfidence={showConfidence}
+            body={email.body ?? bodies[email.id]}
+            bodyLoading={loadingBody === email.id}
             onToggle={() => onToggleOpen(email.id)}
             onMove={(category) => onMove(email.id, category)}
           />

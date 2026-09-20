@@ -16,16 +16,8 @@ export const SOURCES: readonly SourceDef[] = [
     title: "Connect Gmail",
     body: "Authorise read-only access and JEV pulls the window straight from your mailbox.",
     meta: "OAuth · gmail.readonly",
-    hint: "Read-only scope. Labels are written back only when you approve them.",
-    cta: "Authorise & run JEV",
-  },
-  {
-    key: "export",
-    title: "Upload an export",
-    body: "Drop a Google Takeout .mbox or .zip. Parsing happens in the browser.",
-    meta: ".mbox · .zip · up to 2 GB",
-    hint: "The file never leaves this device — JEV runs on the parsed headers.",
-    cta: "Parse file & run JEV",
+    hint: "Read-only. JEV never writes to your mailbox — sorting happens here, not in Gmail.",
+    cta: "Connect Gmail & run JEV",
   },
   {
     key: "demo",

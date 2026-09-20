@@ -1,4 +1,10 @@
-export function SiteHeader() {
+export function SiteHeader({
+  model,
+  connected,
+}: {
+  model: string;
+  connected: boolean;
+}) {
   return (
     <header className="flex w-full max-w-[1080px] items-center justify-between gap-4 border-b border-edge pb-5">
       <div className="flex items-center gap-[11px]">
@@ -13,9 +19,11 @@ export function SiteHeader() {
       <div className="flex items-center gap-[9px] font-mono text-[11px] text-muted-strong">
         <span
           aria-hidden="true"
-          className="inline-block size-[6px] animate-blink rounded-full bg-accent"
+          className={`inline-block size-[6px] rounded-full ${
+            connected ? "animate-blink bg-accent" : "bg-faint"
+          }`}
         />
-        <span>jev-2 · typesafe</span>
+        <span>{model} · typesafe</span>
       </div>
     </header>
   );

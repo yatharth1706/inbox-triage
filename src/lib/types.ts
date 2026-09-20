@@ -24,18 +24,19 @@ export interface SeedMessage {
   snippet: string;
   /** Why JEV put it in this folder, shown when a card is expanded. */
   reason: string;
-  body: string;
+  /** Absent for live mail until the card is expanded and the body is fetched. */
+  body?: string;
 }
 
 export interface Email extends SeedMessage {
-  id: number;
+  id: string;
   /** Relative age, e.g. "1d ago". */
   day: string;
   /** 0–1. */
   confidence: number;
 }
 
-export type SourceKey = "gmail" | "export" | "demo";
+export type SourceKey = "gmail" | "demo";
 export type RangeDays = 30 | 60 | 90;
 export type Step = "connect" | "running" | "done";
 export type FolderFilter = CategoryId | "all";

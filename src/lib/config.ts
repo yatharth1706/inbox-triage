@@ -8,6 +8,8 @@ export interface TriageConfig {
   /** Milliseconds between classification batches. */
   speed: number;
   showConfidence: boolean;
+  /** TypeSafe model id, shown in the header chip. */
+  model: string;
 }
 
 export const ACCENT_OPTIONS = ["#7CE3BC", "#B39CF5", "#F0C36F", "#6FB6F0"] as const;
@@ -18,4 +20,5 @@ export const DEFAULT_CONFIG: TriageConfig = {
   accent: "#7CE3BC",
   speed: 95,
   showConfidence: true,
+  model: "jev-latest",
 };

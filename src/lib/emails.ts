@@ -21,7 +21,7 @@ export function buildEmails(range: RangeDays): Email[] {
     const day = Math.floor((i / total) * range) + 1;
     return {
       ...seed,
-      id: i,
+      id: `demo-${i}`,
       day: day === 1 ? "1d ago" : `${day}d ago`,
       confidence: 0.71 + ((i * 37) % 28) / 100,
     };

@@ -11,12 +11,17 @@ export function EmailCard({
   email,
   open,
   showConfidence,
+  body,
+  bodyLoading,
   onToggle,
   onMove,
 }: {
   email: Email;
   open: boolean;
   showConfidence: boolean;
+  /** Canned for demo mail, fetched on expand for live mail. */
+  body?: string;
+  bodyLoading: boolean;
   onToggle: () => void;
   onMove: (category: CategoryId) => void;
 }) {
@@ -85,7 +90,13 @@ export function EmailCard({
           id={panelId}
           className="flex animate-rise-fast flex-col gap-3 border-t border-edge px-4 pb-4 pt-[14px]"
         >
-          <p className="text-pretty text-[13px] leading-[1.65] text-ink-body">{email.body}</p>
+          {bodyLoading ? (
+            <p className="font-mono text-[11px] text-dim">Loading message…</p>
+          ) : body ? (
+            <p className="whitespace-pre-line text-pretty text-[13px] leading-[1.65] text-ink-body">
+              {body}
+            </p>
+          ) : null}
           <p className="border-l-2 border-edge-4 pl-[10px] font-mono text-[10.5px] leading-[1.6] text-dim">
             jev · {email.reason}
           </p>
